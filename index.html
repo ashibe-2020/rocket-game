@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROCKET LAB | ロケット設計シミュレーター</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🚀 ROCKET LAB</div>
+    <div class="mission">MISSION / EARTH ORBIT</div>
+    <div class="mission-number">01</div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <p class="eyebrow">YOUR DESIGN. YOUR MISSION.</p>
+      <h1>ロケットを自分で設計する</h1>
+      <p>部品を選んで、性能を比較し、自分だけのロケットを打ち上げよう。</p>
+    </section>
+
+    <section class="dashboard">
+      <aside class="parts-panel">
+        <h2>PARTS <span>/ 部品選択</span></h2>
+        <p class="panel-help">各カテゴリーから1つ選択</p>
+
+        <div class="part-group">
+          <h3>01 エンジン</h3>
+          <div id="engine-options" class="options"></div>
+        </div>
+
+        <div class="part-group">
+          <h3>02 燃料タンク</h3>
+          <div id="tank-options" class="options"></div>
+        </div>
+
+        <div class="part-group">
+          <h3>03 機体構造</h3>
+          <div id="body-options" class="options"></div>
+        </div>
+
+        <div class="part-group">
+          <h3>04 ブースター</h3>
+          <div id="booster-options" class="options"></div>
+        </div>
+
+        <div class="combination">
+          <span>DESIGN PATTERNS</span>
+          <strong>16 通り</strong>
+          <small id="combination-count">選択中: 1 / 16</small>
+        </div>
+      </aside>
+
+      <section class="preview-panel">
+        <div class="panel-heading">
+          <h2>PREVIEW</h2>
+          <span>LIVE MODEL</span>
+        </div>
+
+        <div class="space">
+          <div class="stars"></div>
+
+          <div id="rocket" class="rocket">
+            <div class="booster left-booster">
+              <div class="booster-flame"></div>
+            </div>
+            <div class="booster right-booster">
+              <div class="booster-flame"></div>
+            </div>
+
+            <div class="rocket-body">
+              <div class="nose"></div>
+              <div class="window"></div>
+              <div class="tank-band band-one"></div>
+              <div class="tank-band band-two"></div>
+              <div class="fin fin-left"></div>
+              <div class="fin fin-right"></div>
+              <div class="engine-bell"></div>
+              <div class="main-flame"></div>
+            </div>
+          </div>
+
+          <div class="altitude">ALTITUDE <span id="altitude">0 km</span></div>
+          <div class="preview-caption">ILLUSTRATIVE MODEL · NOT TO SCALE</div>
+        </div>
+
+        <div class="preview-footer">
+          <div>
+            <span class="small-label">ROCKET CONFIGURATION</span>
+            <strong id="rocket-name">EXPLORER-01</strong>
+          </div>
+          <span id="rocket-class" class="class-badge">STANDARD</span>
+        </div>
+      </section>
+
+      <aside class="stats-panel">
+        <h2>ROCKET STATS</h2>
+        <p class="panel-help">設計によって変化します</p>
+
+        <div class="stat">
+          <span>推力 <small>THRUST</small></span>
+          <strong id="thrust">800 <i>kN</i></strong>
+          <div class="meter"><div id="thrust-bar"></div></div>
+        </div>
+
+        <div class="stat">
+          <span>機体質量 <small>MASS</small></span>
+          <strong id="mass">20 <i>t</i></strong>
+          <div class="meter"><div id="mass-bar"></div></div>
+        </div>
+
+        <div class="stat">
+          <span>燃料性能 <small>EFFICIENCY</small></span>
+          <strong id="efficiency">75 <i>%</i></strong>
+          <div class="meter"><div id="efficiency-bar"></div></div>
+        </div>
+
+        <div class="stat">
+          <span>費用 <small>COST</small></span>
+          <strong id="cost">120 <i>億円</i></strong>
+          <div class="meter"><div id="cost-bar"></div></div>
+        </div>
+
+        <div class="performance">
+          <span>推力重量比</span>
+          <strong id="twr">4.08</strong>
+          <small id="performance-message">打ち上げ性能を計算中</small>
+        </div>
+
+        <button id="launch-button" class="launch-button">
+          <span>打ち上げる</span>
+          <span>↗</span>
+        </button>
+        <button id="reset-button" class="reset-button">設計をリセット ↺</button>
+      </aside>
+    </section>
+
+    <section class="mission-panel">
+      <div>
+        <p class="eyebrow">MISSION CONTROL</p>
+        <h2 id="mission-title">打ち上げ準備完了</h2>
+        <p id="mission-message">部品を選択して、ロケットの性能を確かめよう。</p>
+      </div>
+      <div id="mission-status" class="status">STANDBY</div>
+    </section>
+
+    <footer>ROCKET LAB · EDUCATIONAL SIMULATOR · SIMPLIFIED MODEL</footer>
+  </main>
+</body>
+</html>
