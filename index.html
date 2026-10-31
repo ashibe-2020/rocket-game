@@ -1,153 +1,116 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROCKET LAB | ロケット設計シミュレーター</title>
+  <title>SPACE MISSION DESIGN LAB</title>
   <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">🚀 ROCKET LAB</div>
-    <div class="mission">MISSION / EARTH ORBIT</div>
-    <div class="mission-number">01</div>
-  </header>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">✦</div>
+        <div><p class="eyebrow">SPACE MISSION DESIGN LAB</p><h1>MISSION <span>BUILDER</span></h1></div>
+      </div>
+      <div class="top-meta">
+        <span class="status-dot"></span><span>DESIGN MODE</span>
+        <span class="version">EDUCATIONAL SIM / 01</span>
+      </div>
+    </header>
 
-  <main>
-    <section class="intro">
-      <p class="eyebrow">YOUR DESIGN. YOUR MISSION.</p>
-      <h1>ロケットを自分で設計する</h1>
-      <p>部品を選んで、性能を比較し、自分だけのロケットを打ち上げよう。</p>
-    </section>
-
-    <section class="dashboard">
-      <aside class="parts-panel">
-        <h2>PARTS <span>/ 部品選択</span></h2>
-        <p class="panel-help">各カテゴリーから1つ選択</p>
-
-        <div class="part-group">
-          <h3>01 エンジン</h3>
-          <div id="engine-options" class="options"></div>
+    <main>
+      <section class="intro-row">
+        <div>
+          <p class="eyebrow">DESIGN → CHALLENGE → ANALYZE → IMPROVE</p>
+          <h2>自分だけのロケットを設計しよう。</h2>
+          <p class="subcopy">部品の組み合わせで性能と費用が変化します。限られた予算で、目標ミッションの達成を目指そう。</p>
         </div>
-
-        <div class="part-group">
-          <h3>02 燃料タンク</h3>
-          <div id="tank-options" class="options"></div>
-        </div>
-
-        <div class="part-group">
-          <h3>03 機体構造</h3>
-          <div id="body-options" class="options"></div>
-        </div>
-
-        <div class="part-group">
-          <h3>04 ブースター</h3>
-          <div id="booster-options" class="options"></div>
-        </div>
-
-        <div class="combination">
-          <span>DESIGN PATTERNS</span>
-          <strong>16 通り</strong>
-          <small id="combination-count">選択中: 1 / 16</small>
-        </div>
-      </aside>
-
-      <section class="preview-panel">
-        <div class="panel-heading">
-          <h2>PREVIEW</h2>
-          <span>LIVE MODEL</span>
-        </div>
-
-        <div class="space">
-          <div class="stars"></div>
-
-          <div id="rocket" class="rocket">
-            <div class="booster left-booster">
-              <div class="booster-flame"></div>
-            </div>
-            <div class="booster right-booster">
-              <div class="booster-flame"></div>
-            </div>
-
-            <div class="rocket-body">
-              <div class="nose"></div>
-              <div class="window"></div>
-              <div class="tank-band band-one"></div>
-              <div class="tank-band band-two"></div>
-              <div class="fin fin-left"></div>
-              <div class="fin fin-right"></div>
-              <div class="engine-bell"></div>
-              <div class="main-flame"></div>
-            </div>
-          </div>
-
-          <div class="altitude">ALTITUDE <span id="altitude">0 km</span></div>
-          <div class="preview-caption">ILLUSTRATIVE MODEL · NOT TO SCALE</div>
-        </div>
-
-        <div class="preview-footer">
-          <div>
-            <span class="small-label">ROCKET CONFIGURATION</span>
-            <strong id="rocket-name">EXPLORER-01</strong>
-          </div>
-          <span id="rocket-class" class="class-badge">STANDARD</span>
+        <div class="budget-card">
+          <span class="eyebrow">AVAILABLE BUDGET</span>
+          <strong><span id="budgetLeft">100</span><small> / 100 PT</small></strong>
+          <div class="budget-track"><div id="budgetBar"></div></div>
+          <span id="budgetMessage" class="budget-message">予算内で設計できます</span>
         </div>
       </section>
 
-      <aside class="stats-panel">
-        <h2>ROCKET STATS</h2>
-        <p class="panel-help">設計によって変化します</p>
+      <section class="workspace">
+        <aside class="panel parts-panel">
+          <div class="panel-heading"><div><p class="eyebrow">01 / COMPONENTS</p><h3>部品を選択</h3></div><span class="step-number">A</span></div>
+          <div id="partGroups"></div>
+          <div class="hint-box"><span class="hint-icon">ⓘ</span><p>部品を選ぶと、中央の設計図と右側の性能表示が更新されます。</p></div>
+        </aside>
 
-        <div class="stat">
-          <span>推力 <small>THRUST</small></span>
-          <strong id="thrust">800 <i>kN</i></strong>
-          <div class="meter"><div id="thrust-bar"></div></div>
+        <section class="panel blueprint-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">02 / BLUEPRINT VIEW</p><h3>機体設計図</h3></div>
+            <span class="live-tag"><i></i> LIVE PREVIEW</span>
+          </div>
+          <div class="blueprint" id="blueprint">
+            <div class="blueprint-grid"></div>
+            <div class="axis axis-x">X — 01</div><div class="axis axis-y">Y — 02</div>
+            <svg id="rocketDrawing" viewBox="0 0 420 560" role="img" aria-label="選択した部品を反映したロケットの設計図">
+              <defs>
+                <linearGradient id="bodyGradient" x1="0" x2="1"><stop offset="0" stop-color="#9bb8d2"/><stop offset=".5" stop-color="#f1f6fb"/><stop offset="1" stop-color="#7c9bb9"/></linearGradient>
+                <linearGradient id="flameGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffe59a"/><stop offset="1" stop-color="#ff874c" stop-opacity="0"/></linearGradient>
+              </defs>
+              <g id="rocketParts"></g>
+              <g class="blueprint-dimensions" fill="none" stroke="#5e8eae" stroke-width="1">
+                <path d="M95 95 H325 M95 89 V101 M325 89 V101"/>
+                <path d="M345 130 V420 M339 130 H351 M339 420 H351"/>
+              </g>
+              <g fill="#78a8c9" font-size="10" font-family="monospace"><text x="210" y="83" text-anchor="middle">CONFIGURATION VIEW</text><text x="358" y="278" transform="rotate(90 358 278)">SCHEMATIC ONLY</text></g>
+            </svg>
+            <div class="blueprint-label label-top">NO. 001 / VEHICLE</div>
+            <div class="blueprint-label label-bottom">NOT TO SCALE · GAME MODEL</div>
+          </div>
+          <div class="blueprint-footer"><span>構成変更はリアルタイム反映</span><span id="configName">STANDARD CONFIGURATION</span></div>
+        </section>
+
+        <aside class="panel telemetry-panel">
+          <div class="panel-heading"><div><p class="eyebrow">03 / TELEMETRY</p><h3>設計パラメータ</h3></div><span class="step-number">B</span></div>
+          <div class="metric-list">
+            <div class="metric"><div class="metric-top"><span>推進性能</span><b id="thrustValue">—</b></div><div class="metric-track"><i id="thrustBar"></i></div><small>上昇を支えるゲーム内指標</small></div>
+            <div class="metric"><div class="metric-top"><span>構造バランス</span><b id="structureValue">—</b></div><div class="metric-track"><i id="structureBar"></i></div><small>軽さと安定性のバランス</small></div>
+            <div class="metric"><div class="metric-top"><span>燃料余裕</span><b id="fuelValue">—</b></div><div class="metric-track"><i id="fuelBar"></i></div><small>ミッションを続ける余裕</small></div>
+            <div class="metric"><div class="metric-top"><span>速度変更能力</span><b id="deltaValue">—</b></div><div class="metric-track"><i id="deltaBar"></i></div><small>目標軌道へ移るための抽象指標</small></div>
+          </div>
+          <div class="cost-summary"><span>選択部品の合計費用</span><strong><b id="costValue">0</b> <small>PT</small></strong></div>
+          <button id="launchButton" class="primary-button">▶　ミッションに挑戦</button>
+          <p class="button-note">※予算超過時は挑戦できません</p>
+        </aside>
+      </section>
+
+      <section class="panel mission-panel">
+        <div class="panel-heading"><div><p class="eyebrow">MISSION OBJECTIVE</p><h3>今回のミッション</h3></div><span class="mission-badge">NORMAL</span></div>
+        <div class="mission-content">
+          <div class="target-icon">◎</div>
+          <div class="mission-text"><strong>地球周回軌道への到達を目指す</strong><p>推進性能・機体のバランス・燃料余裕・速度変更能力を総合的に整えよう。実際の軌道計算ではなく、学習用の簡略モデルで判定します。</p></div>
+          <div class="mission-goal"><span class="eyebrow">GOAL</span><b>ORBIT<br>INSERTION</b></div>
         </div>
+      </section>
 
-        <div class="stat">
-          <span>機体質量 <small>MASS</small></span>
-          <strong id="mass">20 <i>t</i></strong>
-          <div class="meter"><div id="mass-bar"></div></div>
+      <section class="panel result-panel" id="resultPanel" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">04 / FLIGHT REVIEW</p><h3 id="resultTitle">ミッション分析</h3></div><span id="resultBadge" class="result-badge">RESULT</span></div>
+        <div class="flight-layout">
+          <div class="flight-window">
+            <div class="flight-stars"></div>
+            <div class="flight-status" id="flightStatus">READY FOR LAUNCH</div>
+            <div class="flight-rocket" id="flightRocket">▲</div>
+            <div class="flight-ground"></div>
+            <div class="flight-caption" id="flightCaption">設計データを確認しています…</div>
+          </div>
+          <div class="analysis-copy">
+            <h4 id="analysisHeading">設計を分析しよう</h4>
+            <p id="analysisText"></p>
+            <ul id="analysisList"></ul>
+            <button id="retryButton" class="secondary-button">設計に戻って改善する ↗</button>
+          </div>
         </div>
-
-        <div class="stat">
-          <span>燃料性能 <small>EFFICIENCY</small></span>
-          <strong id="efficiency">75 <i>%</i></strong>
-          <div class="meter"><div id="efficiency-bar"></div></div>
-        </div>
-
-        <div class="stat">
-          <span>費用 <small>COST</small></span>
-          <strong id="cost">120 <i>億円</i></strong>
-          <div class="meter"><div id="cost-bar"></div></div>
-        </div>
-
-        <div class="performance">
-          <span>推力重量比</span>
-          <strong id="twr">4.08</strong>
-          <small id="performance-message">打ち上げ性能を計算中</small>
-        </div>
-
-        <button id="launch-button" class="launch-button">
-          <span>打ち上げる</span>
-          <span>↗</span>
-        </button>
-        <button id="reset-button" class="reset-button">設計をリセット ↺</button>
-      </aside>
-    </section>
-
-    <section class="mission-panel">
-      <div>
-        <p class="eyebrow">MISSION CONTROL</p>
-        <h2 id="mission-title">打ち上げ準備完了</h2>
-        <p id="mission-message">部品を選択して、ロケットの性能を確かめよう。</p>
-      </div>
-      <div id="mission-status" class="status">STANDBY</div>
-    </section>
-
-    <footer>ROCKET LAB · EDUCATIONAL SIMULATOR · SIMPLIFIED MODEL</footer>
-  </main>
+      </section>
+    </main>
+    <footer><span>SPACE MISSION DESIGN LAB</span><span>教育用ゲームモデル / 実在のロケット設計・飛行を再現するものではありません</span></footer>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>

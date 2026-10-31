@@ -1,247 +1,152 @@
-
+// このプログラムの数値はすべてゲーム専用の架空ポイントです。
+// 実在ロケットの性能計算・設計・飛行を再現するものではありません。
 const parts = {
   engine: [
-    { name: "標準エンジン", detail: "推力 800 kN", thrust: 800, mass: 3, efficiency: 75, cost: 30 },
-    { name: "高出力エンジン", detail: "推力 1200 kN", thrust: 1200, mass: 5, efficiency: 85, cost: 50 }
+    {id:"engine-basic",name:"標準エンジン",cost:18,thrust:55,structure:5,fuel:5,delta:8,shape:1},
+    {id:"engine-plus",name:"強化エンジン",cost:29,thrust:82,structure:0,fuel:0,delta:12,shape:2},
+    {id:"engine-efficient",name:"効率重視エンジン",cost:25,thrust:63,structure:4,fuel:12,delta:15,shape:1}
+  ],
+  structure: [
+    {id:"frame-standard",name:"標準フレーム",cost:16,thrust:0,structure:62,fuel:0,delta:0,shape:1},
+    {id:"frame-light",name:"軽量フレーム",cost:24,thrust:0,structure:43,fuel:4,delta:8,shape:2},
+    {id:"frame-reinforced",name:"補強フレーム",cost:27,thrust:0,structure:88,fuel:0,delta:0,shape:3}
   ],
   tank: [
-    { name: "小型タンク", detail: "軽量・燃料少なめ", fuel: 5, mass: 4, efficiency: 70, cost: 15 },
-    { name: "大型タンク", detail: "大容量・長距離向け", fuel: 10, mass: 8, efficiency: 90, cost: 30 }
-  ],
-  body: [
-    { name: "標準構造", detail: "バランス型", mass: 10, cost: 20 },
-    { name: "軽量構造", detail: "軽量・高コスト", mass: 6, cost: 40 }
+    {id:"tank-compact",name:"コンパクトタンク",cost:12,thrust:0,structure:4,fuel:48,delta:5,shape:1},
+    {id:"tank-standard",name:"標準タンク",cost:20,thrust:0,structure:0,fuel:72,delta:12,shape:2},
+    {id:"tank-large",name:"大容量タンク",cost:29,thrust:0,structure:-8,fuel:94,delta:18,shape:3}
   ],
   booster: [
-    { name: "ブースターなし", detail: "基本構成", thrust: 0, mass: 0, cost: 0 },
-    { name: "追加ブースター", detail: "追加推力 400 kN", thrust: 400, mass: 4, cost: 25 }
+    {id:"booster-none",name:"ブースターなし",cost:0,thrust:0,structure:0,fuel:0,delta:0,shape:0},
+    {id:"booster-small",name:"補助ブースター",cost:13,thrust:18,structure:-3,fuel:3,delta:3,shape:1},
+    {id:"booster-pair",name:"強化ブースター",cost:22,thrust:31,structure:-9,fuel:5,delta:5,shape:2}
   ]
 };
-
-// 各カテゴリーで最初の部品を初期選択
-const selected = {
-  engine: 0,
-  tank: 0,
-  body: 0,
-  booster: 0
-};
-
-const categoryNames = {
-  engine: "engine-options",
-  tank: "tank-options",
-  body: "body-options",
-  booster: "booster-options"
-};
-
-const $ = (id) => document.getElementById(id);
-
-// 部品選択ボタンを作る
-function renderOptions() {
-  for (const category in parts) {
-    const container = $(categoryNames[category]);
-    container.innerHTML = "";
-
-    parts[category].forEach((part, index) => {
-      const button = document.createElement("button");
-      button.className =
-        "option" + (selected[category] === index ? " selected" : "");
-
-      button.innerHTML = `
-        <strong>${part.name}</strong>
-        <small>${part.detail}</small>
-      `;
-
-      button.setAttribute("aria-pressed", selected[category] === index);
-
-      button.addEventListener("click", () => {
-        selected[category] = index;
-
-        // 打ち上げ中なら、いったん通常状態に戻す
-        resetLaunch();
-
-        renderOptions();
-        updateStats();
-      });
-
-      container.appendChild(button);
+const labels = {engine:"エンジン",structure:"機体構造",tank:"燃料タンク",booster:"ブースター"};
+const state = {engine:"engine-basic",structure:"frame-standard",tank:"tank-standard",booster:"booster-none"};
+const $ = id => document.getElementById(id);
+const allParts = Object.values(parts).flat();
+const selectedPart = key => parts[key].find(p => p.id === state[key]);
+function totals(){
+  const chosen = Object.keys(state).map(selectedPart);
+  const sum = field => chosen.reduce((n,p)=>n+(p[field]||0),0);
+  return {
+    cost:sum("cost"),
+    thrust:clamp(35 + sum("thrust"),0,100),
+    structure:clamp(35 + sum("structure"),0,100),
+    fuel:clamp(15 + sum("fuel"),0,100),
+    delta:clamp(20 + sum("delta"),0,100)
+  };
+}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function renderParts(){
+  const host=$("partGroups"); host.innerHTML="";
+  Object.keys(parts).forEach(key=>{
+    const group=document.createElement("div"); group.className="category";
+    const title=document.createElement("div"); title.className="category-title";
+    title.innerHTML=`<span>${labels[key]}</span><span>${key.toUpperCase()}</span>`;
+    group.appendChild(title);
+    parts[key].forEach(p=>{
+      const btn=document.createElement("button");
+      btn.className="part-option"+(state[key]===p.id?" selected":"");
+      btn.innerHTML=`<span><span class="part-name">${p.name}</span><br><span class="part-detail">ゲーム内性能パラメータ</span></span><span class="part-cost">${p.cost} PT</span>`;
+      btn.addEventListener("click",()=>{state[key]=p.id;render();});
+      group.appendChild(btn);
+    });
+    host.appendChild(group);
+  });
+}
+function setMetric(name,value){
+  $(name+"Value").textContent=value;
+  $(name+"Bar").style.width=value+"%";
+}
+function render(){
+  renderParts();
+  const t=totals(), left=100-t.cost;
+  $("budgetLeft").textContent=left;
+  $("budgetBar").style.width=clamp(left,0,100)+"%";
+  $("budgetMessage").textContent=left<0?"予算を超えています。部品を見直そう":"予算内で設計できます";
+  $("budgetMessage").style.color=left<0?"#ff9d85":"#8fb3c6";
+  $("costValue").textContent=t.cost;
+  setMetric("thrust",t.thrust);setMetric("structure",t.structure);
+  setMetric("fuel",t.fuel);setMetric("delta",t.delta);
+  $("launchButton").disabled=left<0;
+  $("configName").textContent=`${selectedPart("engine").name.toUpperCase()} / ${selectedPart("structure").name.toUpperCase()}`;
+  drawRocket();
+}
+function drawRocket(){
+  const engine=selectedPart("engine"), frame=selectedPart("structure"), tank=selectedPart("tank"), booster=selectedPart("booster");
+  const bodyW=frame.shape===2?76:frame.shape===3?92:84;
+  const tankH=tank.shape===1?100:tank.shape===3?175:135;
+  const engineW=engine.shape===2?58:42;
+  const boosterW=booster.shape===2?24:booster.shape===1?18:0;
+  const x=210-bodyW/2, y=165;
+  let s=`<g stroke="#77a9c8" stroke-width="2" fill="url(#bodyGradient)">
+    <path d="M210 75 Q${210+bodyW/2} 115 ${210+bodyW/2} 165 L${210+bodyW/2} ${165+tankH} L${210-bodyW/2} ${165+tankH} L${210-bodyW/2} 165 Q${210-bodyW/2} 115 210 75Z"/>
+    <rect x="${x+5}" y="${165+tankH}" width="${bodyW-10}" height="52" rx="5" fill="#91a9bd"/>
+    <rect x="${210-engineW/2}" y="${217}" width="${engineW}" height="35" rx="4" fill="#607f98"/>
+    <path d="M${210-engineW/2+8} 252 L${210+engineW/2-8} 252 L210 312Z" fill="url(#flameGradient)" stroke="#ffb16e"/>
+    <path d="M${210-bodyW/2} 260 L${210-bodyW/2-27} 305 L${210-bodyW/2+5} 294Z" fill="#668ba6"/>
+    <path d="M${210+bodyW/2} 260 L${210+bodyW/2+27} 305 L${210+bodyW/2-5} 294Z" fill="#668ba6"/>
+    <rect x="${x+7}" y="${180}" width="${bodyW-14}" height="3" fill="#4b7b9c" stroke="none"/>
+    <circle cx="210" cy="140" r="13" fill="#234b66" stroke="#7cc5dc"/><circle cx="210" cy="140" r="7" fill="#10283b" stroke="#8bd7e9"/>
+  </g>`;
+  if(boosterW){
+    [-1,1].forEach(side=>{
+      const bx=side<0?210-bodyW/2-boosterW-8:210+bodyW/2+8;
+      s+=`<g fill="#8fa9bc" stroke="#77a9c8" stroke-width="2"><path d="M${bx} 145 Q${bx+boosterW/2} 125 ${bx+boosterW} 145 L${bx+boosterW} 250 L${bx} 250Z"/><path d="M${bx} 250 L${bx+boosterW} 250 L${bx+boosterW/2} 280Z" fill="#d18b62"/></g>`;
     });
   }
+  s+=`<g stroke="#77a9c8" stroke-width="1" fill="none"><path d="M210 65 V45 M195 52 H225"/><path d="M${x+12} ${165+tankH-15} H${x+bodyW-12}"/></g>`;
+  $("rocketParts").innerHTML=s;
 }
-
-// 選択された部品から性能を計算
-function updateStats() {
-  const engine = parts.engine[selected.engine];
-  const tank = parts.tank[selected.tank];
-  const body = parts.body[selected.body];
-  const booster = parts.booster[selected.booster];
-
-  const thrust = engine.thrust + booster.thrust;
-  const mass = engine.mass + tank.mass + body.mass + booster.mass;
-
-  // 燃料性能はタンクとエンジンの性能を組み合わせた簡易指標
-  const efficiency = Math.round(
-    (engine.efficiency * 0.6) + (tank.efficiency * 0.4)
-  );
-
-  const cost = engine.cost + tank.cost + body.cost + booster.cost;
-
-  // kN / (t × 重力加速度) による簡易的な推力重量比
-  const twr = thrust / (mass * 9.81);
-
-  $("thrust").innerHTML = `${thrust.toLocaleString()} <i>kN</i>`;
-  $("mass").innerHTML = `${mass} <i>t</i>`;
-  $("efficiency").innerHTML = `${efficiency} <i>%</i>`;
-  $("cost").innerHTML = `${cost} <i>億円</i>`;
-  $("twr").textContent = twr.toFixed(2);
-
-  // グラフ状のバーを更新
-  $("thrust-bar").style.width =
-    `${Math.min(thrust / 1600 * 100, 100)}%`;
-
-  $("mass-bar").style.width =
-    `${Math.min(mass / 30 * 100, 100)}%`;
-
-  $("efficiency-bar").style.width = `${efficiency}%`;
-
-  $("cost-bar").style.width =
-    `${Math.min(cost / 200 * 100, 100)}%`;
-
-  // 16通りのうち、現在の組み合わせ番号を計算
-  const combination =
-    selected.engine * 8 +
-    selected.tank * 4 +
-    selected.body * 2 +
-    selected.booster + 1;
-
-  $("combination-count").textContent =
-    `選択中: ${combination} / 16`;
-
-  // ロケットの名前とクラス
-  $("rocket-name").textContent =
-    `${engine.name === "高出力エンジン" ? "POWER" : "EXPLORER"}-${String(combination).padStart(2, "0")}`;
-
-  $("rocket-class").textContent =
-    twr >= 3 ? "HIGH THRUST" : twr >= 1 ? "STANDARD" : "LOW THRUST";
-
-  // ブースターの表示を切り替える
-  const rocket = $("rocket");
-
-  rocket.classList.toggle(
-    "with-booster",
-    selected.booster === 1
-  );
-
-  document.querySelectorAll(".booster").forEach((element) => {
-    element.style.display =
-      selected.booster === 1 ? "block" : "none";
-  });
-
-  // タンク容量をオレンジ色の帯で表現
-  document.querySelector(".band-two").style.opacity =
-    selected.tank === 1 ? "1" : "0.35";
-
-  // 機体構造による外見の違い
-  const rocketBody = document.querySelector(".rocket-body");
-
-  rocketBody.style.width = selected.body === 1 ? "46px" : "56px";
-  rocketBody.style.left = selected.body === 1 ? "42px" : "37px";
-
-  // エンジン出力によってエンジンの見た目を変更
-  document.querySelector(".engine-bell").style.background =
-    selected.engine === 1 ? "#ff9b58" : "#8aa9be";
-
-  // 状態メッセージ
-  if (twr < 1) {
-    $("performance-message").textContent =
-      "推力不足の可能性があります";
-  } else if (twr < 1.5) {
-    $("performance-message").textContent =
-      "打ち上げには余裕が少ない構成";
-  } else {
-    $("performance-message").textContent =
-      "初期推力に余裕のある構成";
-  }
-
-  $("mission-title").textContent = "打ち上げ準備完了";
-  $("mission-message").textContent =
-    `推力 ${thrust} kN、機体質量 ${mass} t。設計を確認して打ち上げよう。`;
-  $("mission-status").textContent = "STANDBY";
+function analyze(){
+  const t=totals();
+  const checks=[
+    {ok:t.thrust>=65,label:"推進性能",why:"上昇を支えるゲーム内指標が目標より低めです。"},
+    {ok:t.structure>=58,label:"構造バランス",why:"機体の軽さと安定性のバランスを見直してみましょう。"},
+    {ok:t.fuel>=65,label:"燃料余裕",why:"ミッションを続ける余裕が不足しています。"},
+    {ok:t.delta>=58,label:"速度変更能力",why:"目標軌道へ移るためのゲーム内余裕が不足しています。"}
+  ];
+  const passed=checks.filter(c=>c.ok).length;
+  const success=t.cost<=100&&passed===4;
+  return {success,checks,passed};
 }
-
-// 打ち上げ動作
-function launchRocket() {
-  const rocket = $("rocket");
-
-  if (rocket.classList.contains("launching")) return;
-
-  const engine = parts.engine[selected.engine];
-  const tank = parts.tank[selected.tank];
-  const body = parts.body[selected.body];
-  const booster = parts.booster[selected.booster];
-
-  const thrust = engine.thrust + booster.thrust;
-  const mass = engine.mass + tank.mass + body.mass + booster.mass;
-  const twr = thrust / (mass * 9.81);
-
-  if (twr < 1) {
-    $("mission-title").textContent = "打ち上げ条件を満たしていません";
-    $("mission-message").textContent =
-      "推力が機体重量に対して不足しています。部品を変更してみよう。";
-    $("mission-status").textContent = "CHECK DESIGN";
-    return;
-  }
-
-  $("launch-button").disabled = true;
-  $("mission-title").textContent = "エンジン点火！";
-  $("mission-message").textContent =
-    "ロケットが上昇しています。";
-  $("mission-status").textContent = "LAUNCH";
-
-  $("altitude").textContent = "上昇中";
-
-  rocket.classList.remove("launching");
-
-  // アニメーションを最初から再生
-  void rocket.offsetWidth;
-  rocket.classList.add("launching");
-
-  setTimeout(() => {
-    $("mission-title").textContent = "打ち上げシーケンス完了";
-    $("mission-message").textContent =
-      "アニメーションが終了しました。設計を変更して再挑戦できます。";
-    $("mission-status").textContent = "COMPLETE";
-    $("altitude").textContent = "— km";
-
-    $("launch-button").disabled = false;
-  }, 4100);
+function launch(){
+  const result=analyze();
+  $("resultPanel").hidden=false;
+  $("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
+  $("launchButton").disabled=true;
+  $("flightRocket").classList.remove("animate");
+  void $("flightRocket").offsetWidth;
+  $("flightRocket").classList.add("animate");
+  $("flightStatus").textContent="COUNTDOWN  3 · 2 · 1";
+  $("flightCaption").textContent="シミュレーションを開始しています…";
+  $("resultTitle").textContent="飛行シミュレーション";
+  $("resultBadge").textContent="IN PROGRESS";
+  $("analysisHeading").textContent="飛行結果を確認中";
+  $("analysisText").textContent="設計した機体のゲーム内パラメータをもとに、ミッション条件を確認しています。";
+  $("analysisList").innerHTML="";
+  setTimeout(()=>{
+    $("flightStatus").textContent=result.success?"ORBIT GOAL · ACHIEVED":"MISSION REVIEW · COMPLETE";
+    $("flightCaption").textContent=result.success?"目標ミッションの条件を満たしました":"今回の設計では、すべての条件を満たせませんでした";
+    $("resultTitle").textContent=result.success?"ミッション成功！":"ミッション分析";
+    $("resultBadge").textContent=result.success?"SUCCESS":"NEEDS IMPROVEMENT";
+    $("resultBadge").style.color=result.success?"#83dfb8":"#ffbd87";
+    $("analysisHeading").textContent=result.success?"バランスの取れた設計です！":`4つの条件のうち ${result.passed} つをクリア`;
+    $("analysisText").textContent=result.success
+      ?"今回のゲーム内ミッション条件をすべて満たしました。どの部品が成功に貢献したか、設計パラメータを振り返ってみましょう。"
+      :"失敗は次の設計へのヒントです。下の項目を参考に、部品を入れ替えて再挑戦しましょう。";
+    $("analysisList").innerHTML=result.checks.map(c=>`<li>${c.ok?"✓":"△"} ${c.label}：${c.ok?"条件クリア":c.why}</li>`).join("");
+    $("launchButton").disabled=totals().cost>100;
+  },3900);
 }
-
-// 打ち上げアニメーションをリセット
-function resetLaunch() {
-  const rocket = $("rocket");
-
-  rocket.classList.remove("launching");
-
-  $("launch-button").disabled = false;
-  $("altitude").textContent = "0 km";
-}
-
-// 初期状態に戻す
-function resetDesign() {
-  selected.engine = 0;
-  selected.tank = 0;
-  selected.body = 0;
-  selected.booster = 0;
-
-  resetLaunch();
-  renderOptions();
-  updateStats();
-}
-
-// ボタンに動作を登録
-$("launch-button").addEventListener("click", launchRocket);
-$("reset-button").addEventListener("click", resetDesign);
-
-// 初期画面を表示
-renderOptions();
-updateStats();
+$("launchButton").addEventListener("click",launch);
+$("retryButton").addEventListener("click",()=>{
+  $("resultPanel").hidden=true;
+  $("flightRocket").classList.remove("animate");
+  $("resultBadge").style.color="";
+  $("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});
+  $("launchButton").disabled=totals().cost>100;
+});
+render();
